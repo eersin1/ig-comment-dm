@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Reels</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ground: #eef1f4;
+  --surface: #ffffff;
+  --sunken: #e3e7ec;
+  --ink: #12171d;
+  --ink-2: #4c5764;
+  --placeholder: #68727e;
+  --line: #cdd4dc;
+  --line-strong: #8c97a4;
+  --accent: #1d3fd8;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4e9ff;
+  --ok: #0b6b47;
+  --ok-soft: #dcf3e8;
+  --warn: #7c4a00;
+  --warn-soft: #fbeed3;
+  --bad: #a71d2a;
+  --bad-soft: #fce4e6;
+  --stage: #0d1117;
+  --stage-ink: #e8ecf1;
+  --stage-ink-2: #aeb7c2;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #12161b;
+    --surface: #1b2128;
+    --sunken: #0d1116;
+    --ink: #eef1f5;
+    --ink-2: #a9b3bf;
+    --placeholder: #8f99a6;
+    --line: #333c47;
+    --line-strong: #6b7683;
+    --accent: #8aa0ff;
+    --accent-ink: #0b1230;
+    --accent-soft: #232c55;
+    --ok: #6fd6a8;
+    --ok-soft: #12352a;
+    --warn: #f0c677;
+    --warn-soft: #3a2c10;
+    --bad: #ff9aa2;
+    --bad-soft: #421c20;
+    --stage: #07090c;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--ground); scrollbar-color: var(--line-strong) transparent; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  caret-color: var(--accent);
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button, input, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-underline-offset: 3px; }
+h1, h2 { margin: 0; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+p { margin: 0; }
+
+.page { max-width: 1040px; margin: 0 auto; padding: 28px 24px 72px; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 24px; }
+.account { color: var(--ink-2); font-size: 14px; }
+.banner { background: var(--warn-soft); color: var(--warn); padding: 10px 14px; border-radius: var(--radius); margin-bottom: 20px; }
+
+.composer { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 32px; align-items: start; }
+.stage-col { position: sticky; top: 24px; }
+.stage {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  border-radius: 14px;
+  background: var(--stage);
+  color: var(--stage-ink);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.stage video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.drop {
+  position: absolute;
+  inset: 10px;
+  border: 1.5px dashed #5d6875;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background .2s cubic-bezier(.16,1,.3,1), border-color .2s cubic-bezier(.16,1,.3,1);
+}
+.drop:hover, .drop.over { border-color: var(--stage-ink); background: #1b222b; }
+.drop:focus-within { outline: 2px solid #fff; outline-offset: 2px; }
+.drop svg { width: 34px; height: 34px; }
+.drop strong { font-size: 17px; font-weight: 600; }
+.drop span { color: var(--stage-ink-2); font-size: 13px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.file { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+.file b { display: block; color: var(--ink); font-weight: 550; word-break: break-all; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.linkish:disabled { color: var(--ink-2); cursor: default; }
+
+.fields { display: grid; gap: 22px; }
+.field { display: grid; gap: 6px; }
+.label-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+label { font-weight: 600; font-size: 14px; padding: 0; }
+.optional { font-weight: 400; color: var(--ink-2); }
+.count { font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.count.over { color: var(--bad); font-weight: 600; }
+.help { font-size: 13px; color: var(--ink-2); }
+input[type=text], textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+input[type=text]::placeholder, textarea::placeholder { color: var(--placeholder); }
+textarea { resize: vertical; min-height: 84px; }
+#caption { min-height: 120px; }
+
+.dm-group { display: grid; gap: 16px; padding-top: 22px; border-top: 1px solid var(--line); }
+.dm-group > p { margin-top: -10px; }
+.notice { font-size: 13px; padding: 8px 10px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); }
+.error { background: var(--bad-soft); color: var(--bad); padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+
+.publish { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform .15s cubic-bezier(.16,1,.3,1);
+}
+.primary:hover:not(:disabled) { transform: translateY(-1px); }
+.primary:disabled { background: var(--sunken); color: var(--ink-2); cursor: not-allowed; }
+.secondary { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 550; }
+.secondary:hover { background: var(--sunken); }
+
+.progress { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 18px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.step { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: center; color: var(--ink-2); }
+.step i { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: grid; place-items: center; }
+.step svg { width: 12px; height: 12px; }
+.step.active { color: var(--ink); font-weight: 600; }
+.step.active i { border-color: var(--accent); border-right-color: transparent; animation: turn .8s linear infinite; }
+.step.done { color: var(--ink); }
+.step.done i { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.step.failed { color: var(--bad); font-weight: 600; }
+.step.failed i { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.step.skipped { text-decoration: line-through; }
+.step.skipped i { border-style: dashed; }
+@keyframes turn { to { transform: rotate(360deg); } }
+.result { display: grid; gap: 8px; }
+.result strong { font-size: 18px; color: var(--ok); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.recent { margin-top: 48px; }
+.recent-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 600; font-size: 12.5px; color: var(--ink-2); padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+tbody tr:first-child td { border-top: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.thumb { width: 36px; height: 64px; object-fit: cover; border-radius: 4px; background: var(--sunken); display: block; }
+.caption-cell { max-width: 280px; }
+.caption-cell a { color: var(--ink); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.caption-cell a:hover { text-decoration: underline; }
+.caption-cell small { color: var(--ink-2); font-size: 12.5px; }
+.rule { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.chip { font-weight: 600; font-size: 12.5px; padding: 2px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.chip.off { background: var(--sunken); color: var(--ink-2); }
+.small { font-size: 13px; }
+.add-row td { background: var(--ground); }
+.add-form { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.add-form .wide { grid-column: 1 / -1; }
+.empty { padding: 28px; text-align: center; color: var(--ink-2); }
+
+/* ---- tabs ---- */
+.top { align-items: center; }
+.tabs { display: flex; gap: 4px; background: var(--sunken); padding: 4px; border-radius: 10px; }
+.tab { padding: 6px 16px; border-radius: 7px; color: var(--ink-2); text-decoration: none; font-weight: 600; font-size: 14px; }
+.tab:hover { color: var(--ink); }
+.tab[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.view-title { margin-bottom: 20px; }
+
+/* ---- dashboard ---- */
+.dash { display: grid; gap: 28px; }
+.dash-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.muted { color: var(--ink-2); font-size: 13px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; }
+.tile .k { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.tile .v { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .d { font-size: 12.5px; color: var(--ink-2); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-2); }
+select { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 7px; padding: 5px 8px; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 10px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .grid line { stroke: var(--line); stroke-width: 1; }
+.chart .axis text { fill: var(--ink-2); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .axis-title { fill: var(--ink-2); font-size: 12px; font-weight: 600; }
+.chart .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; cursor: pointer; }
+.dot.hollow { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.legend .dot:not(.hollow) { fill: var(--accent); stroke: var(--accent); }
+.chart .dot:hover, .chart .dot.hot { r: 8; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .cross { stroke: var(--line-strong); stroke-width: 1; }
+.chart .marker { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--ink-2); align-items: center; }
+.legend svg { width: 12px; height: 12px; vertical-align: -1px; margin-right: 5px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--ground); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; max-width: 260px; z-index: 5; box-shadow: 0 4px 16px rgb(0 0 0 / .2); }
+.tip b { font-variant-numeric: tabular-nums; }
+.note { font-size: 13px; color: var(--ink-2); background: var(--sunken); border-radius: 8px; padding: 10px 12px; }
+
+.review { font-size: 14.5px; line-height: 1.6; }
+.review h1, .review h2, .review h3 { font-size: 15px; margin: 14px 0 4px; }
+.review ul { margin: 4px 0; padding-left: 20px; }
+.review p { margin: 6px 0; }
+.review.clamped { max-height: 220px; overflow: hidden; mask-image: linear-gradient(#000 70%, transparent); }
+
+.pairs { display: grid; gap: 14px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.variant { display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; text-align: left; background: var(--surface); color: inherit; font: inherit; }
+.variant:hover { border-color: var(--line-strong); }
+.variant.win { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+.variant img { width: 72px; height: 128px; object-fit: cover; border-radius: 6px; background: var(--sunken); }
+.variant .hook { font-weight: 600; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.variant dl { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin: 8px 0 0; font-size: 13px; justify-content: start; }
+.variant dt { color: var(--ink-2); }
+.variant dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.winner { font-size: 12px; font-weight: 700; color: var(--ok); }
+
+th button.sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; white-space: nowrap; }
+th button.sort:hover { color: var(--ink); }
+th[aria-sort] button.sort { color: var(--ink); }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--ground); }
+.hookcell { max-width: 300px; }
+.hookcell b { font-weight: 550; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dash .table-wrap { overflow-x: auto; }
+.dash table { min-width: 860px; }
+.dash td { vertical-align: middle; }
+/* ---- trends ---- */
+.trends-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.trends-head p { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; max-width: 60ch; }
+.multiple { font-weight: 700; font-variant-numeric: tabular-nums; }
+.multiple.hot { color: var(--accent); }
+.trends-table td { vertical-align: top; }
+.format-cell { width: 200px; }
+.format-note { margin: 4px 0 6px; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.frames-strip { display: flex; gap: 3px; margin-top: 6px; }
+.frames-strip img { width: 52px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 4px; display: block; background: var(--sunken); }
+.format-cell .cover { margin-top: 6px; }
+.pacing { margin-top: 6px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tag.hook-type { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
+.tag.guess { background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-2); }
+.reel-more { margin-top: 8px; font-size: 13px; }
+.reel-more summary { cursor: pointer; color: var(--ink-2); font-size: 12.5px; }
+.reel-more p { margin: 6px 0; line-height: 1.4; }
+.watch-sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; margin: 8px 0; }
+.watch-sheets img { width: 100%; border-radius: 4px; display: block; }
+.watch-transcript { white-space: pre-wrap; color: var(--ink-2); max-height: 180px; overflow: auto; background: var(--ground); padding: 8px; border-radius: 6px; }
+.cover { display: block; width: 48px; aspect-ratio: 9 / 16; border-radius: 6px; overflow: hidden; background: var(--sunken); }
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reel-cell { min-width: 320px; max-width: 520px; }
+.reel-cell .creator { font-size: 12.5px; color: var(--ink-2); text-decoration: none; }
+.reel-cell .creator:hover { color: var(--ink); text-decoration: underline; }
+.trend-hook { display: block; margin: 2px 0 6px; font-weight: 600; color: var(--ink); text-decoration: none; line-height: 1.35; }
+.trend-hook:hover { text-decoration: underline; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 12px; padding: 1px 7px; border-radius: 999px; background: var(--sunken); color: var(--ink-2); white-space: nowrap; }
+.tag.format { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.tag.cta { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.tag.cta.none { background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-weight: 400; }
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px; }
+.pattern-col h3 { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.pattern-col ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pattern-col li { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; }
+.pattern-label { font-weight: 600; font-size: 14px; }
+.pattern-sub { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); }
+.watch-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.watch-add input { flex: 1 1 220px; }
+.watch-list { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 12px 0 0; }
+.watch-list li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--surface); }
+.watch-list li.bad { border-color: var(--bad); }
+.watch-list button { background: none; border: 0; cursor: pointer; color: var(--ink-2); padding: 2px 4px; border-radius: 999px; font-size: 15px; line-height: 1; }
+.watch-list button:hover { color: var(--ink); background: var(--sunken); }
+.kw { font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); white-space: nowrap; }
+
+.detail { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+.detail video { width: 100%; aspect-ratio: 9 / 16; border-radius: 12px; background: #000; display: block; }
+.detail .side { position: sticky; top: 20px; display: grid; gap: 10px; }
+.frames { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+.frames img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 4px; cursor: pointer; }
+.transcript { display: grid; gap: 2px; max-height: 420px; overflow: auto; font-size: 14px; }
+.cue { display: grid; grid-template-columns: 48px 1fr; gap: 10px; padding: 4px 6px; border-radius: 6px; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.cue:hover { background: var(--sunken); }
+.cue time { color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: 12.5px; padding-top: 1px; }
+.cue.hook-cue { background: var(--accent-soft); }
+.cue.cta { background: var(--ok-soft); }
+.cue.now { outline: 1.5px solid var(--accent); }
+.sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sheets img { width: 100%; border-radius: 6px; display: block; }
+.back { margin-bottom: 14px; display: inline-block; }
+.caption-box { white-space: pre-wrap; font-size: 14px; max-height: 200px; overflow: auto; }
+
+@media (max-width: 820px) {
+  .detail { grid-template-columns: 1fr; }
+  .detail .side { position: static; max-width: 300px; margin: 0 auto; width: 100%; }
+}
+@media (max-width: 820px) {
+  .composer { grid-template-columns: 1fr; }
+  .stage-col { position: static; max-width: 300px; margin: 0 auto; width: 100%; }
+  .hide-narrow { display: none; }
+  .caption-cell { max-width: none; }
+  .add-form { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .step.active i { animation-duration: 3s; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <nav class="tabs" aria-label="Sections">
+      <a href="#post" class="tab" id="tab-post">Post</a>
+      <a href="#dashboard" class="tab" id="tab-dashboard">Dashboard</a>
+      <a href="#trends" class="tab" id="tab-trends">Trends</a>
+    </nav>
+    <div class="account" id="account">Connecting to Instagram…</div>
+  </header>
+  <div id="view-dashboard" hidden></div>
+  <div id="view-trends" hidden></div>
+  <div id="view-post">
+  <h1 class="view-title">Post a trial reel</h1>
+  <div class="banner" id="dry-banner" hidden>Dry run: this uploads the video to Instagram but never posts it or adds a keyword.</div>
+  <div class="error" id="load-error" hidden></div>
+
+  <main class="composer">
+    <section class="stage-col" aria-label="Video">
+      <div class="stage" id="stage">
+        <label class="drop" id="drop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <strong>Drop your video here</strong>
+          <span>or click to choose it. MP4 or MOV, up to 300 MB.</span>
+          <input class="sr-only" id="video-input" type="file" accept="video/mp4,video/quicktime,.mp4,.mov">
+        </label>
+      </div>
+      <div class="file" id="file-info" hidden>
+        <div><b id="file-name"></b><span id="file-meta"></span></div>
+        <button class="linkish" id="replace" type="button">Replace</button>
+      </div>
+      <div class="notice" id="video-notice" hidden style="margin-top:10px"></div>
+    </section>
+
+    <form class="fields" id="form" novalidate>
+      <div class="field">
+        <div class="label-row"><label for="caption">Caption</label><span class="count" id="caption-count">0 / 2,200</span></div>
+        <textarea id="caption" placeholder="Comment GUIDE and I'll send you the link"></textarea>
+      </div>
+
+
+      <div class="dm-group">
+        <h2>Comment to DM <span class="optional">(optional)</span></h2>
+        <p class="help">When someone comments the keyword, they get your DM within a few minutes. Capitals and hyphens don't matter: GUIDE, guide, X-RAY and xray all count.</p>
+        <div class="field">
+          <label for="keyword">Keyword</label>
+          <input type="text" id="keyword" placeholder="GUIDE" autocomplete="off" spellcheck="false">
+          <div class="notice" id="keyword-notice" hidden></div>
+        </div>
+        <div class="field">
+          <div class="label-row"><label for="dm">DM to send</label><span class="count" id="dm-count">0 / 1,000</span></div>
+          <textarea id="dm" placeholder="Here's the code: https://…"></textarea>
+          <span class="help">Non-followers get this in their message requests.</span>
+        </div>
+        <div class="field">
+          <label for="reply">Public reply <span class="optional">(optional)</span></label>
+          <input type="text" id="reply" placeholder="Sent! Check your DMs" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="error" id="form-error" hidden role="alert"></div>
+      <div class="publish" id="publish-bar">
+        <button class="primary" id="post" type="submit" disabled>Post trial reel</button>
+        <span class="help" id="post-hint">Add a video to post.</span>
+      </div>
+      <div class="progress" id="progress" hidden aria-live="polite"></div>
+    </form>
+  </main>
+
+  <section class="recent" aria-labelledby="recent-title">
+    <div class="recent-head">
+      <h2 id="recent-title">Recent reels</h2>
+      <button class="linkish" id="refresh" type="button">Refresh</button>
+    </div>
+    <div class="notice" id="rules-notice" hidden style="margin-bottom:12px"></div>
+    <div class="table-wrap" id="recent"><div class="empty">Loading your reels…</div></div>
+  </section>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const MAX_BYTES = 300 * 1024 * 1024;
+const CHECK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2.5 6.5 2.5 2.5 4.5-5.5"/></svg>';
+const CROSS = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m3 3 6 6M9 3 3 9"/></svg>';
+
+let file = null;
+let posting = false;
+let previewUrl = null;
+let addingFor = null;
+let overview = null;
+
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else if (value !== undefined && value !== null) node[key] = value;
+  }
+  node.append(...children.filter((child) => child !== null && child !== undefined));
+  return node;
+}
+
+function show(node, message) {
+  node.hidden = !message;
+  node.textContent = message || "";
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: options.body ? { "Content-Type": "application/json" } : undefined,
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || "Something went wrong. Check the Terminal window for details.");
+  return body;
+}
+
+const formatMb = (bytes) => `${(bytes / 1024 / 1024).toFixed(bytes < 10485760 ? 1 : 0)} MB`;
+const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+
+function chooseFile(next) {
+  if (!next || posting) return;
+  const isVideo = /\.(mp4|mov)$/i.test(next.name) || ["video/mp4", "video/quicktime"].includes(next.type);
+  if (!isVideo) return show($("video-notice"), "That isn't an MP4 or MOV. Export it from CapCut as MP4.");
+  file = next;
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(next);
+  const video = el("video", { src: previewUrl, controls: true, muted: true, playsInline: true, id: "preview" });
+  video.addEventListener("loadedmetadata", () => describeVideo(video));
+  video.addEventListener("error", () => show($("video-notice"), "This browser can't preview that file, but Instagram may still accept it."));
+  $("stage").replaceChildren(video);
+  $("file-name").textContent = next.name;
+  $("file-meta").textContent = formatMb(next.size);
+  $("file-info").hidden = false;
+  show($("video-notice"), next.size > MAX_BYTES ? `This video is ${formatMb(next.size)}. Instagram's limit is 300 MB, so export it smaller.` : "");
+  refreshForm();
+}
+
+function describeVideo(video) {
+  const { duration, videoWidth: width, videoHeight: height } = video;
+  $("file-meta").textContent = `${formatMb(file.size)} · ${formatTime(duration)} · ${width}×${height}`;
+  if (file.size > MAX_BYTES) return;
+  if (duration < 3 || duration > 900) {
+    show($("video-notice"), "Instagram needs reels to be between 3 seconds and 15 minutes.");
+  } else if (Math.abs(width / height - 9 / 16) > 0.02) {
+    show($("video-notice"), "This isn't 9:16, so Instagram may crop it or add blank space.");
+  }
+}
+
+function resetDrop() {
+  const label = $("drop");
+  $("stage").replaceChildren(label);
+  file = null;
+  $("video-input").value = "";
+  $("file-info").hidden = true;
+  show($("video-notice"), "");
+  refreshForm();
+}
+
+function refreshForm() {
+  const caption = $("caption").value;
+  const keyword = $("keyword").value.trim();
+  const dm = $("dm").value.trim();
+  const captionCount = $("caption-count");
+  captionCount.textContent = `${caption.length.toLocaleString()} / 2,200`;
+  captionCount.classList.toggle("over", caption.length > 2200);
+  const dmCount = $("dm-count");
+  dmCount.textContent = `${$("dm").value.length.toLocaleString()} / 1,000`;
+  dmCount.classList.toggle("over", $("dm").value.length > 1000);
+
+  const plain = (text) => text.toLowerCase().replace(/[-\s]/g, "");
+  show($("keyword-notice"), keyword && caption && !plain(caption).includes(plain(keyword))
+    ? `Your caption doesn't mention ${keyword}, so people may not know to comment it.` : "");
+
+  let hint = "";
+  if (!file) hint = "Add a video to post.";
+  else if (file.size > MAX_BYTES) hint = "This video is too large to post.";
+  else if (caption.length > 2200) hint = "Shorten the caption to post.";
+  else if (keyword && !dm) hint = "Write the DM, or clear the keyword.";
+  else if (dm && !keyword) hint = "Add the keyword, or clear the DM.";
+  else if ($("dm").value.length > 1000) hint = "Shorten the DM to post.";
+  else if (keyword) hint = `Comments saying ${keyword} will get your DM.`;
+  else hint = "No keyword, so comments won't get a DM.";
+  $("post-hint").textContent = hint;
+  const blocked = !file || file.size > MAX_BYTES || caption.length > 2200 || Boolean(keyword) !== Boolean(dm) || $("dm").value.length > 1000;
+  $("post").disabled = blocked || posting;
+}
+
+function uploadToServer(onProgress) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", "/api/upload");
+    request.upload.onprogress = (event) => event.lengthComputable && onProgress(event.loaded / event.total);
+    request.onload = () => {
+      const body = JSON.parse(request.responseText || "{}");
+      request.status < 300 ? resolve(body.uploadId) : reject(new Error(body.error || "The video couldn't be prepared."));
+    };
+    request.onerror = () => reject(new Error("The page lost contact with the posting app. Check its Terminal window is still open."));
+    request.send(file);
+  });
+}
+
+function renderProgress(job, preparing) {
+  const box = $("progress");
+  box.hidden = false;
+  const steps = job ? job.steps : [
+    { key: "upload", label: preparing, state: "active" },
+    { key: "process", label: "Instagram processes it", state: "pending" },
+    { key: "publish", label: "Post the reel", state: "pending" },
+    { key: "keyword", label: "Turn on the keyword", state: $("keyword").value.trim() ? "pending" : "skipped" },
+  ];
+  const list = el("ol", { class: "steps" });
+  for (const step of steps) {
+    const icon = el("i", { innerHTML: step.state === "done" ? CHECK : step.state === "failed" ? CROSS : "" });
+    list.append(el("li", { class: `step ${step.state}` }, icon, el("span", { textContent: step.label })));
+  }
+  box.replaceChildren(list);
+  if (job && job.status !== "running") box.append(renderOutcome(job));
+}
+
+function renderOutcome(job) {
+  const startOver = el("button", { class: "secondary", type: "button", textContent: "Post another reel", onclick: resetAll });
+  if (job.status === "done") {
+    if (job.dryRun) {
+      return el("div", { class: "result" }, el("strong", { textContent: "Dry run passed. Nothing was posted." }), el("div", { class: "actions" }, startOver));
+    }
+    const keyword = $("keyword").value.trim();
+    const dmNote = keyword ? ` Comments saying ${keyword} now get your DM.` : "";
+    const normal = job.postedAsNormal === true;
+    const heading = normal
+      ? "Instagram reports this as a normal reel."
+      : job.postedAsNormal === false
+      ? "Instagram reports this as a trial reel."
+      : "Your reel is posted. Check whether it's a trial.";
+    const note = normal
+      ? "Your followers may see it. Check your profile now, and delete it there if you don't want that."
+      : "Its direct link can look like a normal reel, so check your profile instead: it should be under Reels, then Drafts and trial reels, and not on your grid. When it performs, tap Share to everyone on the reel.";
+    return el("div", { class: "result" },
+      el(normal ? "div" : "strong", normal ? { class: "error", textContent: heading } : { textContent: heading }),
+      el("p", { textContent: note + dmNote }),
+      el("div", { class: "actions" },
+        job.permalink ? el("a", { href: job.permalink, target: "_blank", rel: "noreferrer", textContent: "View on Instagram" }) : null,
+        startOver));
+  }
+  const actions = el("div", { class: "actions" });
+  if (!job.publishAttempted) {
+    actions.append(el("button", { class: "secondary", type: "button", textContent: "Try again", onclick: () => { $("form").requestSubmit(); } }));
+  } else if (job.permalink || job.mediaId) {
+    if (job.permalink) actions.append(el("a", { href: job.permalink, target: "_blank", rel: "noreferrer", textContent: "View on Instagram" }));
+  }
+  actions.append(startOver);
+  return el("div", { class: "result" }, el("div", { class: "error", textContent: job.error }), actions);
+}
+
+function setPosting(value) {
+  posting = value;
+  for (const id of ["caption", "keyword", "dm", "reply"]) $(id).disabled = value;
+  $("replace").disabled = value;
+  $("publish-bar").hidden = value;
+  refreshForm();
+}
+
+function resetAll() {
+  for (const id of ["caption", "keyword", "dm", "reply"]) $(id).value = "";
+  $("progress").hidden = true;
+  show($("form-error"), "");
+  $("publish-bar").hidden = false;
+  unlockFields();
+  resetDrop();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function submit(event) {
+  event.preventDefault();
+  if (posting || !file) return;
+  show($("form-error"), "");
+  setPosting(true);
+  try {
+    renderProgress(null, "Prepare the video");
+    const uploadId = await uploadToServer((share) => renderProgress(null, `Prepare the video (${Math.round(share * 100)}%)`));
+    const { jobId } = await api("/api/publish", {
+      method: "POST",
+      body: JSON.stringify({
+        uploadId,
+        caption: $("caption").value,
+        keyword: $("keyword").value,
+        dm_text: $("dm").value,
+        public_reply: $("reply").value,
+      }),
+    });
+    let job;
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      job = await api(`/api/jobs/${jobId}`);
+      renderProgress(job);
+    } while (job.status === "running");
+    posting = false;
+    if (job.status === "done" || job.publishAttempted) loadOverview();
+    if (job.status === "failed" && !job.publishAttempted) unlockFields();
+  } catch (error) {
+    $("progress").hidden = true;
+    setPosting(false);
+    show($("form-error"), error.message);
+  }
+}
+
+function unlockFields() {
+  for (const id of ["caption", "keyword", "dm", "reply"]) $(id).disabled = false;
+  $("replace").disabled = false;
+}
+
+function renderRecent() {
+  const wrap = $("recent");
+  const { posts, rules } = overview;
+  if (!posts.length) return wrap.replaceChildren(el("div", { class: "empty", textContent: "No reels yet. Your first one will show up here." }));
+  const body = el("tbody");
+  for (const post of posts) {
+    const postRules = rules.filter((rule) => rule.media_id === post.id);
+    const cell = el("td");
+    for (const rule of postRules) {
+      cell.append(el("div", { class: "rule" },
+        el("span", { class: `chip${rule.enabled ? "" : " off"}`, textContent: rule.keyword, title: rule.dm_text }),
+        el("button", { class: "linkish small", type: "button", textContent: rule.enabled ? "Pause" : "Resume", onclick: () => toggleRule(rule) })));
+    }
+    cell.append(el("button", { class: "linkish small", type: "button", textContent: "Add keyword", onclick: () => { addingFor = addingFor === post.id ? null : post.id; renderRecent(); } }));
+    const date = new Date(post.timestamp.replace(/([+-]\d{2})(\d{2})$/, "$1:$2"));
+    body.append(el("tr", {},
+      el("td", { class: "hide-narrow" }, post.thumbnail ? el("img", { class: "thumb", src: post.thumbnail, alt: "", loading: "lazy", onerror: (event) => { event.target.style.visibility = "hidden"; } }) : null),
+      el("td", { class: "caption-cell" },
+        el("a", { href: post.permalink, target: "_blank", rel: "noreferrer", textContent: post.caption || "No caption" }),
+        el("small", { textContent: date.toLocaleDateString(undefined, { day: "numeric", month: "short" }) })),
+      el("td", { class: "num", textContent: post.views?.toLocaleString() ?? "–" }),
+      el("td", { class: "num hide-narrow", textContent: post.likes?.toLocaleString() ?? "–" }),
+      el("td", { class: "num hide-narrow", textContent: post.comments?.toLocaleString() ?? "–" }),
+      cell));
+    if (addingFor === post.id) body.append(renderAddRow(post));
+  }
+  wrap.replaceChildren(el("table", {},
+    el("thead", {}, el("tr", {},
+      el("th", { class: "hide-narrow" }, el("span", { class: "sr-only", textContent: "Thumbnail" })),
+      el("th", { textContent: "Reel" }),
+      el("th", { class: "num", textContent: "Views" }),
+      el("th", { class: "num hide-narrow", textContent: "Likes" }),
+      el("th", { class: "num hide-narrow", textContent: "Comments" }),
+      el("th", { textContent: "Keyword" }))),
+    body));
+  const active = rules.filter((rule) => rule.enabled).length;
+  show($("rules-notice"), active > 3 ? `${active} keywords are on. To keep API use low, the newest is checked every 30 seconds and the others take turns, so a DM on an older reel can take a few minutes.` : "");
+}
+
+function renderAddRow(post) {
+  const keyword = el("input", { type: "text", id: "add-keyword", placeholder: "GUIDE", autocomplete: "off", spellcheck: false });
+  const dm = el("input", { type: "text", id: "add-dm", placeholder: "Here's the code: https://…", autocomplete: "off" });
+  const reply = el("input", { type: "text", id: "add-reply", placeholder: "Sent! Check your DMs", autocomplete: "off" });
+  const error = el("div", { class: "error wide", hidden: true, role: "alert" });
+  const save = el("button", { class: "primary", type: "submit", textContent: "Turn on keyword" });
+  const form = el("form", { class: "add-form", onsubmit: async (event) => {
+    event.preventDefault();
+    save.disabled = true;
+    try {
+      await api("/api/rules", { method: "POST", body: JSON.stringify({ media_id: post.id, keyword: keyword.value, dm_text: dm.value, public_reply: reply.value }) });
+      addingFor = null;
+      await loadOverview();
+    } catch (failure) {
+      show(error, failure.message);
+      save.disabled = false;
+    }
+  } },
+    el("div", { class: "field" }, el("label", { htmlFor: "add-keyword", textContent: "Keyword" }), keyword),
+    el("div", { class: "field" }, el("label", { htmlFor: "add-dm", textContent: "DM to send" }), dm),
+    el("div", { class: "field wide" }, el("label", { htmlFor: "add-reply" }, "Public reply ", el("span", { class: "optional", textContent: "(optional)" })), reply),
+    el("p", { class: "help wide", textContent: "Only new comments get the DM. Anyone who already commented this keyword on the reel is skipped." }),
+    error,
+    el("div", { class: "actions wide" }, save, el("button", { class: "secondary", type: "button", textContent: "Cancel", onclick: () => { addingFor = null; renderRecent(); } })));
+  queueMicrotask(() => keyword.focus());
+  return el("tr", { class: "add-row" }, el("td", { colSpan: 6 }, form));
+}
+
+async function toggleRule(rule) {
+  try {
+    await api(`/api/rules/${rule.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !rule.enabled }) });
+    await loadOverview();
+  } catch (error) {
+    show($("rules-notice"), error.message);
+  }
+}
+
+async function loadOverview() {
+  try {
+    overview = await api("/api/overview");
+    $("account").textContent = `Posting as @${overview.username}`;
+    $("dry-banner").hidden = !overview.dryRun;
+    show($("load-error"), "");
+    renderRecent();
+  } catch (error) {
+    $("account").textContent = "Not connected";
+    show($("load-error"), `Couldn't reach Instagram: ${error.message}`);
+    $("recent").replaceChildren(el("div", { class: "empty", textContent: "Your reels will show up here once this connects." }));
+  }
+}
+
+$("video-input").addEventListener("change", (event) => chooseFile(event.target.files[0]));
+$("replace").addEventListener("click", resetDrop);
+$("refresh").addEventListener("click", loadOverview);
+$("form").addEventListener("submit", submit);
+$("form").addEventListener("input", refreshForm);
+for (const type of ["dragenter", "dragover"]) {
+  window.addEventListener(type, (event) => { event.preventDefault(); $("drop").classList.add("over"); });
+}
+for (const type of ["dragleave", "drop"]) {
+  window.addEventListener(type, (event) => { event.preventDefault(); $("drop").classList.remove("over"); });
+}
+window.addEventListener("drop", (event) => chooseFile(event.dataTransfer.files[0]));
+window.addEventListener("beforeunload", (event) => { if (posting) event.preventDefault(); });
+
+refreshForm();
+loadOverview();
+</script>
+<script src="/dashboard.js"></script>
+<script src="/trends.js"></script>
+</body>
+</html>

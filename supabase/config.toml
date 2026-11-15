@@ -1,0 +1,12 @@
+project_id = "ig-comment-dm"
+
+[functions.poll-comments]
+# pg_cron calls this with x-cron-secret instead of a Supabase JWT. See index.ts.
+verify_jwt = false
+
+[functions.snapshot-insights]
+# Called hourly by pg_cron with x-cron-secret, same as poll-comments.
+verify_jwt = false
+
+[functions.scan-watchlist]
+verify_jwt = false
